@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codeyoung — No-Show Recovery Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #F4F6FA; min-height: 100vh; padding: 32px 24px; }
+  h1 { font-size: 22px; font-weight: 600; color: #1A3C6E; text-align: center; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #888; text-align: center; margin-bottom: 28px; }
+  .proto-wrap { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; max-width: 860px; margin: 0 auto; }
+  .left { display: flex; flex-direction: column; align-items: center; }
+  .frame-label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .phone-frame { width: 300px; border-radius: 34px; border: 2.5px solid #CBD5E1; background: #E8EDF5; padding: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.10); }
+  .phone-screen { border-radius: 24px; overflow: hidden; background: #F7F8FA; min-height: 580px; display: flex; flex-direction: column; }
+  .screen { display: none; flex-direction: column; flex: 1; }
+  .screen.active { display: flex; }
+  .status-bar { background: #1A3C6E; padding: 10px 16px 8px; display: flex; justify-content: space-between; }
+  .status-bar span { color: #fff; font-size: 11px; font-weight: 500; }
+  .app-header { background: #1A3C6E; padding: 14px 16px 16px; }
+  .app-header .logo { color: #fff; font-size: 15px; font-weight: 600; }
+  .app-header .greeting { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 2px; }
+  .screen-body { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 10px; background: #F7F8FA; }
+  .card { background: #fff; border-radius: 14px; padding: 14px; border: 0.5px solid #E0E0E0; }
+  .card-label { font-size: 10px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .class-row { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 38px; height: 38px; border-radius: 50%; background: #EBF2FF; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: #1A3C6E; flex-shrink: 0; }
+  .class-info { flex: 1; }
+  .class-name { font-size: 13px; font-weight: 600; color: #1A1A1A; }
+  .class-time { font-size: 11px; color: #888; margin-top: 2px; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  .badge-green { background: #E8F5E9; color: #2E7D32; }
+  .badge-red { background: #FFEBEE; color: #C62828; }
+  .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; transition: opacity 0.15s; }
+  .btn:hover { opacity: 0.88; }
+  .btn-primary { background: #1A3C6E; color: #fff; }
+  .btn-secondary { background: #fff; color: #1A3C6E; border: 1.5px solid #1A3C6E; }
+  .btn-danger { background: #C62828; color: #fff; }
+  .btn-success { background: #2E7D32; color: #fff; }
+  .alert { border-radius: 10px; padding: 12px; }
+  .alert-orange { background: #FFF3E0; border-left: 3px solid #F5A623; }
+  .alert-red { background: #FFEBEE; border-left: 3px solid #C62828; }
+  .alert-green { background: #E8F5E9; border-left: 3px solid #2E7D32; }
+  .alert-title { font-size: 13px; font-weight: 600; }
+  .alert-orange .alert-title { color: #E65100; }
+  .alert-red .alert-title { color: #C62828; }
+  .alert-green .alert-title { color: #2E7D32; }
+  .alert-body { font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .alert-orange .alert-body { color: #7a4f00; }
+  .alert-red .alert-body { color: #7f0000; }
+  .alert-green .alert-body { color: #1b5e20; }
+  .timer-circle { width: 60px; height: 60px; border-radius: 50%; background: #FFF8E7; border: 3px solid #FFF3E0; display: flex; align-items: center; justify-content: center; flex-direction: column; margin: 0 auto 6px; }
+  .timer-num { font-size: 16px; font-weight: 600; color: #E65100; }
+  .timer-sub { font-size: 9px; color: #E65100; }
+  .sub-card { display: flex; align-items: center; gap: 10px; background: #EBF2FF; border-radius: 12px; padding: 10px 12px; }
+  .sub-avatar { width: 42px; height: 42px; border-radius: 50%; background: #1A3C6E; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; flex-shrink: 0; }
+  .stars { color: #F5A623; font-size: 12px; }
+  .credit-pill { background: #E8F5E9; color: #2E7D32; border-radius: 20px; padding: 8px 12px; font-size: 12px; font-weight: 600; text-align: center; }
+  .slot-btn { flex: 1; padding: 9px 4px; border-radius: 10px; border: 1.5px solid #1A3C6E; background: #fff; color: #1A3C6E; font-size: 11px; font-weight: 600; cursor: pointer; text-align: center; }
+  .slot-btn.selected { background: #1A3C6E; color: #fff; }
+  .slots-row { display: flex; gap: 6px; }
+  .mt-auto { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+  .star-rating { display: flex; justify-content: center; gap: 10px; font-size: 28px; }
+  .star-rating span { cursor: pointer; color: #ddd; }
+  .star-label { font-size: 12px; color: #aaa; text-align: center; margin-top: 6px; }
+  .resolve-icon { width: 52px; height: 52px; border-radius: 50%; background: #E8F5E9; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .resolve-title { font-size: 14px; font-weight: 600; color: #2E7D32; text-align: center; }
+  .resolve-sub { font-size: 12px; color: #888; text-align: center; margin-top: 4px; }
+  .nav-bar { display: flex; background: #fff; border-top: 0.5px solid #E0E0E0; padding: 8px 0 4px; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9px; color: #aaa; }
+  .nav-item.active { color: #1A3C6E; font-weight: 600; }
+  .nav-dot { width: 16px; height: 16px; border-radius: 3px; background: currentColor; opacity: 0.2; }
+  .nav-item.active .nav-dot { opacity: 1; }
+  .step-dots { display: flex; justify-content: center; gap: 6px; margin-top: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #CBD5E1; }
+  .dot.active { background: #1A3C6E; }
+
+  .right { flex: 1; min-width: 260px; }
+  .panel-title { font-size: 15px; font-weight: 600; color: #1A3C6E; margin-bottom: 4px; }
+  .panel-sub { font-size: 12px; color: #666; margin-bottom: 16px; line-height: 1.6; }
+  .flow-steps { display: flex; flex-direction: column; gap: 10px; }
+  .flow-card { background: #fff; border: 0.5px solid #E0E0E0; border-radius: 12px; padding: 12px 14px; cursor: pointer; transition: border-color 0.15s; }
+  .flow-card:hover { border-color: #93AACC; }
+  .flow-card.active { border: 1.5px solid #1A3C6E; }
+  .flow-num { font-size: 10px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .flow-title { font-size: 13px; font-weight: 600; color: #1A1A1A; }
+  .flow-desc { font-size: 12px; color: #666; margin-top: 3px; line-height: 1.5; }
+  .flow-icon { font-size: 16px; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<h1>Mentor No-Show — Recovery Flow Prototype</h1>
+<div class="subtitle">Interactive prototype · Parent App · Codeyoung APM Assignment</div>
+
+<div class="proto-wrap">
+  <div class="left">
+    <div class="frame-label">Parent app — live simulation</div>
+    <div class="phone-frame">
+      <div class="phone-screen">
+        <div class="status-bar">
+          <span>9:05 AM</span><span>Codeyoung</span><span>4G</span>
+        </div>
+        <div class="app-header">
+          <div class="logo">Codeyoung</div>
+          <div class="greeting">Hi Priya, Arjun's classes</div>
+        </div>
+
+        <!-- S1: Normal -->
+        <div class="screen active" id="s1">
+          <div class="screen-body">
+            <div class="card">
+              <div class="card-label">Today's class</div>
+              <div class="class-row">
+                <div class="avatar">RS</div>
+                <div class="class-info">
+                  <div class="class-name">Python Basics — Loops</div>
+                  <div class="class-time">With Rahul Sir · 5:00 PM today</div>
+                </div>
+                <span class="badge badge-green">Scheduled</span>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-label">This week</div>
+              <div style="font-size:13px;color:#444;line-height:1.6;">3 of 4 sessions completed<br><span style="color:#2E7D32;font-weight:600;">Great streak!</span></div>
+            </div>
+            <div class="mt-auto" style="margin-top:auto;">
+              <div style="font-size:11px;color:#aaa;text-align:center;margin-bottom:6px;">▶ Simulate: mentor misses 5 PM class</div>
+              <button class="btn btn-danger" onclick="goTo('s2')">Mentor misses class →</button>
+            </div>
+          </div>
+          <div class="nav-bar">
+            <div class="nav-item active"><div class="nav-dot"></div>Home</div>
+            <div class="nav-item"><div class="nav-dot"></div>Classes</div>
+            <div class="nav-item"><div class="nav-dot"></div>Progress</div>
+            <div class="nav-item"><div class="nav-dot"></div>Account</div>
+          </div>
+        </div>
+
+        <!-- S2: Detected -->
+        <div class="screen" id="s2">
+          <div class="screen-body">
+            <div class="alert alert-red">
+              <div class="alert-title">Class not started</div>
+              <div class="alert-body">Rahul Sir hasn't joined Arjun's 5:00 PM session. We detected this automatically and are fixing it now.</div>
+            </div>
+            <div class="card" style="text-align:center;">
+              <div class="timer-circle"><div class="timer-num">5:05</div><div class="timer-sub">elapsed</div></div>
+              <div style="font-size:12px;color:#888;margin-top:4px;">Auto-detected at 5:05 PM</div>
+            </div>
+            <div class="alert alert-orange">
+              <div class="alert-title">We're on it</div>
+              <div class="alert-body">Our team has been notified. A substitute mentor is being matched now. You'll hear back in minutes.</div>
+            </div>
+            <div style="margin-top:auto;">
+              <button class="btn btn-primary" onclick="goTo('s3')">See update →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- S3: Sub found -->
+        <div class="screen" id="s3">
+          <div class="screen-body">
+            <div class="alert alert-green">
+              <div class="alert-title">Substitute mentor found</div>
+              <div class="alert-body">Arjun's class can continue today. A verified Codeyoung mentor is ready to join now.</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Stepping in today</div>
+              <div class="sub-card">
+                <div class="sub-avatar">NP</div>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#1A3C6E;">Neha Patel</div>
+                  <div class="stars">★★★★★</div>
+                  <div style="font-size:11px;color:#555;margin-top:2px;">Python · 4 yrs experience</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="credit-pill">Session credit auto-applied to your account</div>
+            </div>
+            <div class="mt-auto">
+              <button class="btn btn-success" onclick="goTo('s4')">Accept & join class →</button>
+              <button class="btn btn-secondary" onclick="goTo('s4r')">Prefer to reschedule</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- S4: Recovered -->
+        <div class="screen" id="s4">
+          <div class="screen-body">
+            <div class="alert alert-green">
+              <div class="alert-title">Class is live</div>
+              <div class="alert-body">Arjun is now in session with Neha Patel. Topic: Python Basics — Loops.</div>
+            </div>
+            <div class="card" style="text-align:center;padding:20px 14px;">
+              <div class="resolve-icon">✓</div>
+              <div class="resolve-title">Issue resolved in 8 mins</div>
+              <div class="resolve-sub">Session recovered successfully</div>
+            </div>
+            <div class="card">
+              <div class="card-label">What happened</div>
+              <div style="font-size:12px;color:#555;line-height:1.6;">Rahul Sir reported a connectivity issue. Next class with him is confirmed for Thursday 5 PM.</div>
+            </div>
+            <div style="margin-top:auto;">
+              <button class="btn btn-secondary" onclick="goTo('s5')">Rate this experience</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- S4R: Reschedule -->
+        <div class="screen" id="s4r">
+          <div class="screen-body">
+            <div class="card">
+              <div class="card-label">Pick a new slot</div>
+              <div style="font-size:12px;color:#555;margin-bottom:10px;line-height:1.5;">We pre-selected times that match Arjun's schedule.</div>
+              <div class="slots-row">
+                <button class="slot-btn" id="sl1" onclick="pickSlot(1)">Wed 5 PM<br><span style="font-weight:400;font-size:10px;">Tomorrow</span></button>
+                <button class="slot-btn" id="sl2" onclick="pickSlot(2)">Thu 5 PM<br><span style="font-weight:400;font-size:10px;">In 2 days</span></button>
+                <button class="slot-btn" id="sl3" onclick="pickSlot(3)">Sat 11 AM<br><span style="font-weight:400;font-size:10px;">Weekend</span></button>
+              </div>
+            </div>
+            <div class="card"><div class="credit-pill">Session credit also auto-applied</div></div>
+            <div style="margin-top:auto;">
+              <button class="btn btn-primary" id="cnf-btn" onclick="goTo('s5r')" style="display:none;">Confirm reschedule →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- S5: Rating -->
+        <div class="screen" id="s5">
+          <div class="screen-body">
+            <div class="card" style="text-align:center;padding:20px 14px;">
+              <div style="font-size:14px;font-weight:600;color:#1A1A1A;margin-bottom:4px;">How did we handle this?</div>
+              <div style="font-size:12px;color:#888;margin-bottom:14px;">Your feedback improves the system</div>
+              <div class="star-rating" id="star-row">
+                <span onclick="rate(1)">☆</span><span onclick="rate(2)">☆</span>
+                <span onclick="rate(3)">☆</span><span onclick="rate(4)">☆</span><span onclick="rate(5)">☆</span>
+              </div>
+              <div class="star-label" id="star-lbl">Tap to rate</div>
+            </div>
+            <div style="margin-top:auto;">
+              <button class="btn btn-primary" onclick="goTo('s1')">Back to home</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- S5R: Rescheduled -->
+        <div class="screen" id="s5r">
+          <div class="screen-body">
+            <div class="alert alert-green">
+              <div class="alert-title">Class rescheduled</div>
+              <div class="alert-body" id="rs-msg">Your class has been rescheduled. You'll get a reminder 24 hrs before.</div>
+            </div>
+            <div class="card" style="text-align:center;padding:20px 14px;">
+              <div class="resolve-icon">✓</div>
+              <div class="resolve-title">All sorted</div>
+              <div class="resolve-sub">Session credit also applied</div>
+            </div>
+            <div style="margin-top:auto;">
+              <button class="btn btn-primary" onclick="goTo('s1')">Back to home</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <div class="step-dots">
+      <div class="dot active" id="dot1"></div>
+      <div class="dot" id="dot2"></div>
+      <div class="dot" id="dot3"></div>
+      <div class="dot" id="dot4"></div>
+      <div class="dot" id="dot5"></div>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="panel-title">Recovery flow — what's happening</div>
+    <div class="panel-sub">Each step shows what the system does automatically when a mentor no-show is detected. Click any step to jump to that screen.</div>
+    <div class="flow-steps">
+      <div class="flow-card active" id="fc1" onclick="goTo('s1')">
+        <div class="flow-icon">📅</div>
+        <div class="flow-num">Step 0</div>
+        <div class="flow-title">Class scheduled normally</div>
+        <div class="flow-desc">Parent sees the upcoming class. Everything looks normal.</div>
+      </div>
+      <div class="flow-card" id="fc2" onclick="goTo('s2')">
+        <div class="flow-icon">⏱</div>
+        <div class="flow-num">Step 1 — automated</div>
+        <div class="flow-title">No-show detected at T+5 mins</div>
+        <div class="flow-desc">System flags absence. Parent notified instantly. No support call needed.</div>
+      </div>
+      <div class="flow-card" id="fc3" onclick="goTo('s3')">
+        <div class="flow-icon">👤</div>
+        <div class="flow-num">Step 2 — ops + automated</div>
+        <div class="flow-title">Substitute mentor assigned</div>
+        <div class="flow-desc">On-call substitute with matching subject expertise offered within 10 minutes.</div>
+      </div>
+      <div class="flow-card" id="fc4" onclick="goTo('s4')">
+        <div class="flow-icon">✅</div>
+        <div class="flow-num">Step 3 — resolution</div>
+        <div class="flow-title">Session recovered or rescheduled</div>
+        <div class="flow-desc">Parent picks substitute or reschedule. Credit auto-applied either way.</div>
+      </div>
+      <div class="flow-card" id="fc5" onclick="goTo('s5')">
+        <div class="flow-icon">★</div>
+        <div class="flow-num">Step 4 — feedback loop</div>
+        <div class="flow-title">Parent rates recovery quality</div>
+        <div class="flow-desc">CSAT captured to measure and improve recovery over time.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var cur = 's1';
+  var slotNames = {1:'Wed 5 PM', 2:'Thu 5 PM', 3:'Sat 11 AM'};
+  var sToF = {s1:'fc1',s2:'fc2',s3:'fc3',s4:'fc4',s4r:'fc4',s5:'fc5',s5r:'fc5'};
+  var sToD = {s1:1,s2:2,s3:3,s4:4,s4r:4,s5:5,s5r:5};
+
+  function goTo(id) {
+    document.getElementById(cur).classList.remove('active');
+    document.getElementById(id).classList.add('active');
+    cur = id;
+    document.querySelectorAll('.flow-card').forEach(function(e){e.classList.remove('active');});
+    if(sToF[id]) document.getElementById(sToF[id]).classList.add('active');
+    document.querySelectorAll('.dot').forEach(function(e){e.classList.remove('active');});
+    if(sToD[id]) document.getElementById('dot'+sToD[id]).classList.add('active');
+  }
+
+  function pickSlot(n) {
+    [1,2,3].forEach(function(i){
+      document.getElementById('sl'+i).classList.toggle('selected', i===n);
+    });
+    document.getElementById('cnf-btn').style.display='block';
+    document.getElementById('rs-msg').textContent='Your class has been rescheduled to '+slotNames[n]+' with Rahul Sir. You\'ll get a reminder 24 hrs before.';
+  }
+
+  function rate(n) {
+    var s = document.getElementById('star-row').children;
+    var labels = ['','Poor','Fair','Good','Great','Excellent!'];
+    for(var i=0;i<s.length;i++){
+      s[i].textContent = i<n ? '★' : '☆';
+      s[i].style.color = i<n ? '#F5A623' : '#ddd';
+    }
+    document.getElementById('star-lbl').textContent = labels[n];
+  }
+</script>
+</body>
+</html>
